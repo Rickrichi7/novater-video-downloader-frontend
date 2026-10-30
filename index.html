@@ -21,6 +21,17 @@
   #clear { background: #2a2a30; color: #ff8a8a; padding: 13px 13px; }
   #download { width: 100%; margin-top: 14px; background: #111; color: #fff; font-weight: 700; font-size: 17px; padding: 15px; border: 2px solid transparent; background-image: linear-gradient(#111, #111), linear-gradient(90deg, #00ff88, #00aaff); background-origin: border-box; background-clip: padding-box, border-box; box-shadow: 0 0 18px rgba(0, 255, 136, 0.25), 0 0 18px rgba(0, 170, 255, 0.25); }
   #download:disabled { opacity: .45; }
+  #progress { margin-top: 14px; }
+  .glass-track { position: relative; height: 18px; border-radius: 999px; background: rgba(255,255,255,0.08); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.22); overflow: hidden; }
+  #progressFill { position: relative; height: 100%; width: 0%; background: linear-gradient(90deg, #00aaff, #0066ff); border-radius: 999px; transition: width 0.2s ease; overflow: hidden; }
+  #progressFill.done { background: linear-gradient(90deg, #ffd700, #ff2d55); box-shadow: 0 0 18px rgba(255, 215, 0, 0.7), 0 0 22px rgba(255, 45, 85, 0.7); }
+  .bubble { position: absolute; bottom: 2px; border-radius: 50%; background: rgba(255,255,255,0.75); animation: bubbleUp 1.6s linear infinite; }
+  @keyframes bubbleUp { from { transform: translateY(10px); opacity: 0; } 30% { opacity: 0.9; } to { transform: translateY(-14px); opacity: 0; } }
+  #progressText { margin-top: 6px; font-size: 13px; color: #ccc; text-align: center; }
+  #visitorCountry { text-align: center; margin-bottom: 14px; }
+  .waving-flag { width: 64px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.4); animation: flagWave 2s ease-in-out infinite; transform-origin: left center; }
+  @keyframes flagWave { 0%, 100% { transform: rotate(-2deg) skewY(0deg); } 50% { transform: rotate(2deg) skewY(3deg); } }
+  #countryName { margin-top: 6px; font-size: 14px; color: #ccc; }
   select { width: 100%; padding: 12px; font-size: 15px; border-radius: 10px; border: 1px solid #333; background: #1a1a1e; color: #fff; }
   .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 14px; color: #ccc; }
   .toggle-row input { width: 20px; height: 20px; accent-color: #f5c518; }
@@ -35,6 +46,10 @@
 </head>
 <body>
 <div class="wrap">
+  <div id="visitorCountry" style="display:none">
+    <img id="countryFlagImg" class="waving-flag" src="" alt="Your country flag">
+    <div id="countryName"></div>
+  </div>
   <h1><span>NOVATER</span> Video Downloader</h1>
   <p class="sub">Paste a public video link from X, YouTube, TikTok, Instagram or Facebook. One tap on Download now saves the file straight to your device.</p>
 
@@ -59,6 +74,10 @@
   </select>
 
   <button id="download" type="button" disabled>Download now</button>
+  <div id="progress" style="display:none">
+    <div class="glass-track"><div id="progressFill"><span class="bubble" style="left:12%;width:7px;height:7px;animation-delay:0s"></span><span class="bubble" style="left:38%;width:5px;height:5px;animation-delay:0.5s"></span><span class="bubble" style="left:62%;width:8px;height:8px;animation-delay:0.9s"></span><span class="bubble" style="left:84%;width:6px;height:6px;animation-delay:1.3s"></span></div></div>
+    <div id="progressText">0%</div>
+  </div>
   <div id="status"></div>
 
   <div class="recent" id="recent" style="display:none">
@@ -77,6 +96,9 @@ const clearBtn = document.getElementById("clear");
 const autoPasteBox = document.getElementById("autoPaste");
 const qualitySel = document.getElementById("quality");
 const downloadBtn = document.getElementById("download");
+const progressEl = document.getElementById("progress");
+const progressFill = document.getElementById("progressFill");
+const progressText = document.getElementById("progressText");
 const statusEl = document.getElementById("status");
 const recentEl = document.getElementById("recent");
 const recentList = document.getElementById("recentList");
@@ -152,6 +174,10 @@ downloadBtn.addEventListener("click", async () => {
   const url = linkInput.value.trim();
   if (!looksLikeUrl(url)) return;
   downloadBtn.disabled = true;
+  progressEl.style.display = "block";
+  progressFill.classList.remove("done");
+  progressFill.style.width = "0%";
+  progressText.textContent = "0%";
   setStatus("Getting your video… this takes a few seconds.");
   try {
     const res = await fetch(BACKEND_URL + "/api/download", {
@@ -165,7 +191,24 @@ downloadBtn.addEventListener("click", async () => {
       throw new Error(detail);
     }
     setStatus("Downloading to your device…");
-    const blob = await res.blob();
+    const total = parseInt(res.headers.get("Content-Length") || "0", 10);
+    const reader = res.body.getReader();
+    const chunks = [];
+    let received = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received += value.length;
+      if (total > 0) {
+        const pct = Math.min(99, Math.round(received / total * 100));
+        progressFill.style.width = pct + "%";
+        progressText.textContent = pct + "%";
+      } else {
+        progressText.textContent = "Downloading… " + (received / 1048576).toFixed(1) + " MB";
+      }
+    }
+    const blob = new Blob(chunks);
     let filename = "novater-video.mp4";
     const disp = res.headers.get("Content-Disposition") || "";
     const m = /filename="?([^";]+)"?/.exec(disp);
@@ -178,6 +221,9 @@ downloadBtn.addEventListener("click", async () => {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     saveRecent(url);
+    progressFill.style.width = "100%";
+    progressFill.classList.add("done");
+    progressText.textContent = "100% — Done";
     setStatus("Done — the file should be in your downloads now.", "ok");
   } catch (e) {
     setStatus("Download failed: " + e.message, "error");
@@ -189,6 +235,24 @@ downloadBtn.addEventListener("click", async () => {
 loadRecent();
 refresh();
 tryAutoPaste();
+async function showVisitorCountry() {
+  try {
+    let code = "", name = "";
+    try {
+      const r = await fetch("https://ipapi.co/json/");
+      if (r.ok) { const j = await r.json(); code = j.country_code || ""; name = j.country_name || ""; }
+    } catch (e) {}
+    if (!code) {
+      const r2 = await fetch("https://ip-api.com/json/?fields=status,country,countryCode");
+      if (r2.ok) { const j2 = await r2.json(); if (j2.status === "success") { code = j2.countryCode || ""; name = j2.country || ""; } }
+    }
+    if (!code) return;
+    document.getElementById("countryFlagImg").src = "https://flagcdn.com/w160/" + code.toLowerCase() + ".png";
+    document.getElementById("countryName").textContent = name || code;
+    document.getElementById("visitorCountry").style.display = "block";
+  } catch (e) { /* no country shown if lookup fails — never guess one */ }
+}
+showVisitorCountry();
 </script>
 </body>
 </html>
