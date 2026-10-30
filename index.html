@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NOVATER Video Downloader</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #0d0d0f; color: #f2f2f2; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 28px 18px 40px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h1 span { color: #d4af37; }
+  p.sub { color: #aaa; margin: 0 0 22px; font-size: 14px; line-height: 1.5; }
+  label { display: block; font-size: 13px; color: #ccc; margin: 14px 0 6px; }
+  .input-row { display: flex; gap: 8px; }
+  #link { flex: 1; min-width: 0; padding: 13px 12px; font-size: 15px; border-radius: 10px; border: 1px solid #333; background: #1a1a1e; color: #fff; outline: none; }
+  #link:focus { border-color: #d4af37; }
+  button { cursor: pointer; border: none; border-radius: 10px; font-size: 15px; padding: 13px 16px; }
+  .btn-small { background: #2a2a30; color: #fff; white-space: nowrap; }
+  .btn-small:active, #download:active { opacity: .8; }
+  #clear { background: #2a2a30; color: #ff8a8a; padding: 13px 13px; }
+  #download { width: 100%; margin-top: 14px; background: #f5c518; color: #111; font-weight: 700; font-size: 17px; padding: 15px; }
+  #download:disabled { opacity: .45; }
+  select { width: 100%; padding: 12px; font-size: 15px; border-radius: 10px; border: 1px solid #333; background: #1a1a1e; color: #fff; }
+  .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 14px; color: #ccc; }
+  .toggle-row input { width: 20px; height: 20px; accent-color: #f5c518; }
+  #status { margin-top: 16px; font-size: 14px; line-height: 1.5; min-height: 21px; color: #ddd; }
+  #status.error { color: #ff8a8a; }
+  #status.ok { color: #8be89b; }
+  .recent { margin-top: 22px; }
+  .recent h3 { font-size: 13px; color: #999; margin: 0 0 8px; font-weight: 600; }
+  .recent button { display: block; width: 100%; text-align: left; background: #1a1a1e; color: #bbb; font-size: 13px; padding: 10px 12px; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .note { margin-top: 26px; font-size: 12.5px; color: #888; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><span>NOVATER</span> Video Downloader</h1>
+  <p class="sub">Paste a public video link from X, YouTube, TikTok, Instagram or Facebook. One tap on Download saves the file straight to your device — no second button, no other site in between.</p>
+
+  <label for="link">Post link</label>
+  <div class="input-row">
+    <input id="link" type="url" inputmode="url" placeholder="Paste your video link here…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button class="btn-small" id="pasteBtn" type="button">Paste</button>
+    <button id="clear" type="button" title="Clear">✕</button>
+  </div>
+
+  <div class="toggle-row">
+    <input id="autoPaste" type="checkbox" checked>
+    <label for="autoPaste" style="margin:0">Auto-paste: fill the link I copied when I open this page</label>
+  </div>
+
+  <label for="quality">Quality</label>
+  <select id="quality">
+    <option value="best">Best quality</option>
+    <option value="720p">720p</option>
+    <option value="480p">480p (smaller file)</option>
+    <option value="audio">Audio only (MP3)</option>
+  </select>
+
+  <button id="download" type="button" disabled>Download video</button>
+  <div id="status"></div>
+
+  <div class="recent" id="recent" style="display:none">
+    <h3>Recent links</h3>
+    <div id="recentList"></div>
+  </div>
+
+  <p class="note">This downloader runs on NOVATER's own backend — it does not send your link to Cobalt, fbdown or any other download site. Public posts only: private posts, login-only pages and DRM videos (like Netflix) cannot be downloaded by any downloader. Note: YouTube sometimes refuses server downloads with its own bot check — if that happens the page will say so plainly; X, TikTok, Instagram and Facebook links normally work.</p>
+</div>
+
+<script>
+const BACKEND_URL = "https://novater-video-downloader.onrender.com";
+const linkInput = document.getElementById("link");
+const pasteBtn = document.getElementById("pasteBtn");
+const clearBtn = document.getElementById("clear");
+const autoPasteBox = document.getElementById("autoPaste");
+const qualitySel = document.getElementById("quality");
+const downloadBtn = document.getElementById("download");
+const statusEl = document.getElementById("status");
+const recentEl = document.getElementById("recent");
+const recentList = document.getElementById("recentList");
+
+function looksLikeUrl(t) {
+  return /^https?:\/\/\S+$/i.test((t || "").trim());
+}
+function setStatus(msg, cls) {
+  statusEl.textContent = msg;
+  statusEl.className = cls || "";
+}
+function refresh() {
+  downloadBtn.disabled = !looksLikeUrl(linkInput.value);
+}
+async function tryAutoPaste() {
+  if (!autoPasteBox.checked || linkInput.value.trim()) return;
+  try {
+    const text = await navigator.clipboard.readText();
+    if (looksLikeUrl(text)) {
+      linkInput.value = text.trim();
+      refresh();
+      setStatus("Link pasted automatically. Tap Download when ready.", "ok");
+    }
+  } catch (e) { /* clipboard permission not granted: manual paste still works */ }
+}
+pasteBtn.addEventListener("click", async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (looksLikeUrl(text)) {
+      linkInput.value = text.trim();
+      refresh();
+      setStatus("Pasted. Tap Download.", "ok");
+    } else {
+      setStatus("Your clipboard does not hold a link right now — paste it manually.", "error");
+    }
+  } catch (e) {
+    setStatus("Clipboard read was blocked — long-press the box and paste manually.", "error");
+    linkInput.focus();
+  }
+});
+clearBtn.addEventListener("click", () => {
+  linkInput.value = "";
+  setStatus("");
+  refresh();
+  linkInput.focus();
+});
+linkInput.addEventListener("input", () => { setStatus(""); refresh(); });
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) tryAutoPaste();
+});
+
+function loadRecent() {
+  const items = JSON.parse(localStorage.getItem("novater_recent_links") || "[]");
+  if (!items.length) { recentEl.style.display = "none"; return; }
+  recentEl.style.display = "block";
+  recentList.innerHTML = "";
+  items.forEach(u => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = u;
+    b.addEventListener("click", () => { linkInput.value = u; refresh(); setStatus(""); window.scrollTo({top: 0, behavior: "smooth"}); });
+    recentList.appendChild(b);
+  });
+}
+function saveRecent(u) {
+  let items = JSON.parse(localStorage.getItem("novater_recent_links") || "[]");
+  items = [u, ...items.filter(x => x !== u)].slice(0, 5);
+  localStorage.setItem("novater_recent_links", JSON.stringify(items));
+  loadRecent();
+}
+
+downloadBtn.addEventListener("click", async () => {
+  const url = linkInput.value.trim();
+  if (!looksLikeUrl(url)) return;
+  downloadBtn.disabled = true;
+  setStatus("Getting your video… this takes a few seconds.");
+  try {
+    const res = await fetch(BACKEND_URL + "/api/download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, quality: qualitySel.value })
+    });
+    if (!res.ok) {
+      let detail = "Could not download that video.";
+      try { const j = await res.json(); if (j.detail) detail = j.detail; } catch (e) {}
+      throw new Error(detail);
+    }
+    setStatus("Downloading to your device…");
+    const blob = await res.blob();
+    let filename = "novater-video.mp4";
+    const disp = res.headers.get("Content-Disposition") || "";
+    const m = /filename="?([^";]+)"?/.exec(disp);
+    if (m) filename = m[1];
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    saveRecent(url);
+    setStatus("Done — the file should be in your downloads now.", "ok");
+  } catch (e) {
+    setStatus("Download failed: " + e.message, "error");
+  } finally {
+    refresh();
+  }
+});
+
+loadRecent();
+refresh();
+tryAutoPaste();
+</script>
+</body>
+</html>
