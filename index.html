@@ -6,42 +6,163 @@
 <title>NOVATER Video Downloader</title>
 <style>
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #0d0d0f; color: #f2f2f2; }
-  .wrap { max-width: 560px; margin: 0 auto; padding: 28px 18px 40px; }
-  h1 { font-size: 26px; margin: 0 0 4px; }
-  h1 span { color: #d4af37; }
-  p.sub { color: #aaa; margin: 0 0 22px; font-size: 14px; line-height: 1.5; }
-  label { display: block; font-size: 13px; color: #ccc; margin: 14px 0 6px; }
+  html, body { min-height: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+    color: #ffffff;
+    background: #0a0a12;
+    background-image:
+      radial-gradient(ellipse 90% 55% at 50% -10%, rgba(88, 101, 242, 0.45), transparent 65%),
+      radial-gradient(ellipse 60% 45% at 8% 30%, rgba(0, 170, 255, 0.28), transparent 70%),
+      radial-gradient(ellipse 55% 45% at 95% 65%, rgba(139, 92, 246, 0.30), transparent 70%),
+      radial-gradient(ellipse 70% 40% at 50% 110%, rgba(0, 199, 190, 0.22), transparent 65%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 32px 18px 48px; }
+
+  /* ---- Liquid Glass card ---- */
+  .glass {
+    background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05));
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 28px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+    padding: 28px 22px;
+  }
+
+  /* ---- Header ---- */
+  #visitorCountry { text-align: center; margin-bottom: 18px; }
+  .waving-flag { width: 64px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.45); animation: flagWave 2s ease-in-out infinite; transform-origin: left center; }
+  @keyframes flagWave { 0%, 100% { transform: rotate(-2deg) skewY(0deg); } 50% { transform: rotate(2deg) skewY(3deg); } }
+  #countryName { margin-top: 8px; font-size: 14px; color: rgba(255,255,255,0.75); }
+
+  h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 6px; text-align: center; }
+  h1 span {
+    background: linear-gradient(90deg, #7dd3fc, #a5b4fc, #c4b5fd);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+  p.sub { color: rgba(255,255,255,0.72); margin: 0 0 24px; font-size: 14px; line-height: 1.6; text-align: center; }
+
+  label { display: block; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); margin: 18px 0 8px; }
   .input-row { display: flex; gap: 8px; }
-  #link { flex: 1; min-width: 0; padding: 13px 12px; font-size: 15px; border-radius: 10px; border: 1px solid #333; background: #1a1a1e; color: #fff; outline: none; }
-  #link:focus { border-color: #d4af37; }
-  button { cursor: pointer; border: none; border-radius: 10px; font-size: 15px; padding: 13px 16px; }
-  .btn-small { background: #2a2a30; color: #fff; white-space: nowrap; }
-  .btn-small:active, #download:active { opacity: .8; }
-  #clear { background: #2a2a30; color: #ff8a8a; padding: 13px 13px; }
-  #download { width: 100%; margin-top: 14px; background: #111; color: #fff; font-weight: 700; font-size: 17px; padding: 15px; border: 2px solid transparent; background-image: linear-gradient(#111, #111), linear-gradient(90deg, #00ff88, #00aaff); background-origin: border-box; background-clip: padding-box, border-box; box-shadow: 0 0 18px rgba(0, 255, 136, 0.25), 0 0 18px rgba(0, 170, 255, 0.25); }
+
+  /* ---- Glass controls ---- */
+  #link {
+    flex: 1; min-width: 0;
+    padding: 14px 16px; font-size: 15px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.10);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    color: #fff; outline: none;
+    transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  #link::placeholder { color: rgba(255,255,255,0.45); }
+  #link:focus {
+    border-color: rgba(255,255,255,0.65);
+    background: rgba(255,255,255,0.14);
+    box-shadow: 0 0 0 4px rgba(125, 211, 252, 0.18);
+  }
+  button { cursor: pointer; border: none; font-size: 15px; font-family: inherit; }
+  .btn-small {
+    background: rgba(255,255,255,0.14);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff; white-space: nowrap;
+    border-radius: 999px; padding: 13px 18px; font-weight: 600;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+    transition: background .2s ease, transform .1s ease;
+  }
+  .btn-small:hover { background: rgba(255,255,255,0.22); }
+  .btn-small:active, #download:active { transform: scale(0.98); opacity: .85; }
+  #clear {
+    background: rgba(255,255,255,0.10);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.22);
+    color: rgba(255,255,255,0.85);
+    border-radius: 999px; padding: 13px 15px;
+    transition: background .2s ease;
+  }
+  #clear:hover { background: rgba(255,255,255,0.18); }
+
+  /* ---- Download button: frosted white pill ---- */
+  #download {
+    width: 100%; margin-top: 20px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.78));
+    -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+    color: #0b0b14; font-weight: 800; font-size: 17px; letter-spacing: -0.2px;
+    padding: 16px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 24px rgba(125, 211, 252, 0.25), inset 0 1px 0 rgba(255,255,255,0.9);
+    transition: transform .1s ease, box-shadow .2s ease, opacity .2s ease;
+  }
+  #download:hover:not(:disabled) { box-shadow: 0 10px 28px rgba(0,0,0,0.4), 0 0 32px rgba(125, 211, 252, 0.4), inset 0 1px 0 rgba(255,255,255,0.9); }
   #download:disabled { opacity: .45; }
-  #progress { margin-top: 14px; }
-  .glass-track { position: relative; height: 18px; border-radius: 999px; background: rgba(255,255,255,0.08); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.22); overflow: hidden; }
-  #progressFill { position: relative; height: 100%; width: 0%; background: linear-gradient(90deg, #00aaff, #0066ff); border-radius: 999px; transition: width 0.2s ease; overflow: hidden; }
-  #progressFill.done { background: linear-gradient(90deg, #ffd700, #ff2d55); box-shadow: 0 0 18px rgba(255, 215, 0, 0.7), 0 0 22px rgba(255, 45, 85, 0.7); }
+
+  /* ---- Progress ---- */
+  #progress { margin-top: 18px; }
+  .glass-track {
+    position: relative; height: 18px; border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.22); overflow: hidden;
+  }
+  #progressFill {
+    position: relative; height: 100%; width: 0%;
+    background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+    border-radius: 999px; transition: width 0.2s ease; overflow: hidden;
+  }
+  #progressFill.done {
+    background: linear-gradient(90deg, #38bdf8, #34d399);
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.7), 0 0 22px rgba(52, 211, 153, 0.6);
+  }
   .bubble { position: absolute; bottom: 2px; border-radius: 50%; background: rgba(255,255,255,0.75); animation: bubbleUp 1.6s linear infinite; }
   @keyframes bubbleUp { from { transform: translateY(10px); opacity: 0; } 30% { opacity: 0.9; } to { transform: translateY(-14px); opacity: 0; } }
-  #progressText { margin-top: 6px; font-size: 13px; color: #ccc; text-align: center; }
-  #visitorCountry { text-align: center; margin-bottom: 14px; }
-  .waving-flag { width: 64px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.4); animation: flagWave 2s ease-in-out infinite; transform-origin: left center; }
-  @keyframes flagWave { 0%, 100% { transform: rotate(-2deg) skewY(0deg); } 50% { transform: rotate(2deg) skewY(3deg); } }
-  #countryName { margin-top: 6px; font-size: 14px; color: #ccc; }
-  select { width: 100%; padding: 12px; font-size: 15px; border-radius: 10px; border: 1px solid #333; background: #1a1a1e; color: #fff; }
-  .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 14px; color: #ccc; }
-  .toggle-row input { width: 20px; height: 20px; accent-color: #f5c518; }
-  #status { margin-top: 16px; font-size: 14px; line-height: 1.5; min-height: 21px; color: #ddd; }
-  #status.error { color: #ff8a8a; }
-  #status.ok { color: #8be89b; }
-  .recent { margin-top: 22px; }
-  .recent h3 { font-size: 13px; color: #999; margin: 0 0 8px; font-weight: 600; }
-  .recent button { display: block; width: 100%; text-align: left; background: #1a1a1e; color: #bbb; font-size: 13px; padding: 10px 12px; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .note { margin-top: 26px; font-size: 12.5px; color: #888; line-height: 1.6; }
+  #progressText { margin-top: 8px; font-size: 13px; color: rgba(255,255,255,0.75); text-align: center; }
+
+  /* ---- Quality select ---- */
+  select {
+    width: 100%; padding: 13px 14px; font-size: 15px; font-family: inherit;
+    border-radius: 999px; border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.10);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    color: #fff; outline: none; appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='rgba(255,255,255,0.8)' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 16px center;
+    transition: border-color .2s ease, background .2s ease;
+  }
+  select:focus { border-color: rgba(255,255,255,0.65); background-color: rgba(255,255,255,0.14); }
+  select option { background: #1c1c26; color: #fff; }
+
+  /* ---- Toggle ---- */
+  .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 18px; font-size: 14px; color: rgba(255,255,255,0.8); }
+  .toggle-row input { width: 20px; height: 20px; accent-color: #7dd3fc; flex-shrink: 0; }
+
+  #status { margin-top: 16px; font-size: 14px; line-height: 1.5; min-height: 21px; color: rgba(255,255,255,0.85); text-align: center; }
+  #status.error { color: #fda4af; }
+  #status.ok { color: #6ee7b7; }
+
+  /* ---- Recent links ---- */
+  .recent { margin-top: 24px; }
+  .recent h3 { font-size: 13px; color: rgba(255,255,255,0.55); margin: 0 0 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; }
+  .recent button {
+    display: block; width: 100%; text-align: left;
+    background: rgba(255,255,255,0.08);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.16);
+    color: rgba(255,255,255,0.75); font-size: 13px;
+    padding: 11px 14px; margin-bottom: 8px; border-radius: 999px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    transition: background .2s ease;
+  }
+  .recent button:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+  .note { margin-top: 26px; font-size: 12.5px; color: rgba(255,255,255,0.5); line-height: 1.7; text-align: center; }
+  .foot { margin-top: 18px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 0.4px; }
 </style>
 </head>
 <body>
@@ -50,42 +171,47 @@
     <img id="countryFlagImg" class="waving-flag" src="" alt="Your country flag">
     <div id="countryName"></div>
   </div>
-  <h1><span>NOVATER</span> Video Downloader</h1>
-  <p class="sub">Paste a public video link from X, YouTube, TikTok, Instagram or Facebook. One tap on Download now saves the file straight to your device.</p>
 
-  <label for="link">Post link</label>
-  <div class="input-row">
-    <input id="link" type="url" inputmode="url" placeholder="Paste your video link here…" autocomplete="off" autocapitalize="off" spellcheck="false">
-    <button class="btn-small" id="pasteBtn" type="button">Paste</button>
-    <button id="clear" type="button" title="Clear">✕</button>
+  <div class="glass">
+    <h1><span>NOVATER</span> Video Downloader</h1>
+    <p class="sub">Paste a public video link from X, YouTube, TikTok, Instagram or Facebook. One tap on Download now saves the file straight to your device.</p>
+
+    <label for="link">Post link</label>
+    <div class="input-row">
+      <input id="link" type="url" inputmode="url" placeholder="Paste your video link here…" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button class="btn-small" id="pasteBtn" type="button">Paste</button>
+      <button id="clear" type="button" title="Clear">✕</button>
+    </div>
+
+    <div class="toggle-row">
+      <input id="autoPaste" type="checkbox" checked>
+      <label for="autoPaste" style="margin:0">Auto-paste: fill the link I copied when I open this page</label>
+    </div>
+
+    <label for="quality">Quality</label>
+    <select id="quality">
+      <option value="best">Best quality</option>
+      <option value="720p">720p</option>
+      <option value="480p">480p (smaller file)</option>
+      <option value="audio">Audio only (MP3)</option>
+    </select>
+
+    <button id="download" type="button" disabled>Download now</button>
+    <div id="progress" style="display:none">
+      <div class="glass-track"><div id="progressFill"><span class="bubble" style="left:12%;width:7px;height:7px;animation-delay:0s"></span><span class="bubble" style="left:38%;width:5px;height:5px;animation-delay:0.5s"></span><span class="bubble" style="left:62%;width:8px;height:8px;animation-delay:0.9s"></span><span class="bubble" style="left:84%;width:6px;height:6px;animation-delay:1.3s"></span></div></div>
+      <div id="progressText">0%</div>
+    </div>
+    <div id="status"></div>
+
+    <div class="recent" id="recent" style="display:none">
+      <h3>Recent links</h3>
+      <div id="recentList"></div>
+    </div>
+
+    <p class="note">NOVATER Video Downloader is a standalone service running on its own backend. Public posts only: private posts, login-only pages and DRM videos (like Netflix) cannot be downloaded. Note: YouTube sometimes refuses server downloads with its own bot check — if that happens the page will say so plainly.</p>
   </div>
 
-  <div class="toggle-row">
-    <input id="autoPaste" type="checkbox" checked>
-    <label for="autoPaste" style="margin:0">Auto-paste: fill the link I copied when I open this page</label>
-  </div>
-
-  <label for="quality">Quality</label>
-  <select id="quality">
-    <option value="best">Best quality</option>
-    <option value="720p">720p</option>
-    <option value="480p">480p (smaller file)</option>
-    <option value="audio">Audio only (MP3)</option>
-  </select>
-
-  <button id="download" type="button" disabled>Download now</button>
-  <div id="progress" style="display:none">
-    <div class="glass-track"><div id="progressFill"><span class="bubble" style="left:12%;width:7px;height:7px;animation-delay:0s"></span><span class="bubble" style="left:38%;width:5px;height:5px;animation-delay:0.5s"></span><span class="bubble" style="left:62%;width:8px;height:8px;animation-delay:0.9s"></span><span class="bubble" style="left:84%;width:6px;height:6px;animation-delay:1.3s"></span></div></div>
-    <div id="progressText">0%</div>
-  </div>
-  <div id="status"></div>
-
-  <div class="recent" id="recent" style="display:none">
-    <h3>Recent links</h3>
-    <div id="recentList"></div>
-  </div>
-
-  <p class="note">NOVATER Video Downloader is a standalone service running on its own backend. Public posts only: private posts, login-only pages and DRM videos (like Netflix) cannot be downloaded. Note: YouTube sometimes refuses server downloads with its own bot check — if that happens the page will say so plainly.</p>
+  <p class="foot">NOVATER Studio</p>
 </div>
 
 <script>
